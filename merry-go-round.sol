@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+// All times faked to 5 seconds for testing
+
 contract MerryGoRound {
 
     // State variables
     address public creator;
+    // @TODO swap native token payments with GHO approvals
     uint256 public registrationFee = 1 ether; // 1 USD in Ether value
     mapping(address => string) public participants; // Address to nickname
      address[] public participantAddresses;    
@@ -21,8 +24,7 @@ contract MerryGoRound {
     }
 
     // Function to register a participant
-    function register(string memory nickname) external payable {
-        require(msg.value == registrationFee, "Incorrect registration fee.");
+    function register(string memory nickname) external  {
         // compare participants[msg.sender] to a string
         require(keccak256(abi.encodePacked(participants[msg.sender])) == keccak256(abi.encodePacked("")), "Already registered.");
         require(finalizeStartTime == 0, "Registration is closed.");
@@ -34,7 +36,7 @@ contract MerryGoRound {
 
 
     // Let's start to finalize the group and make sure everyone is happy with the participants
-    function finalizeGroup() external {
+    function beginFinalization() external {
         require(msg.sender == creator, "Only creator can finalize.");
         require(finalizeStartTime == 0 && roundStartTime == 0, "Can't begin to finalize the group now.");
         finalizeStartTime = block.timestamp; 
@@ -45,7 +47,7 @@ contract MerryGoRound {
     // Only allowed during the first 12 hours of finalization, so everyone has 12 hours to cancel.
     function remove(uint256 id) external {
         require(finalizeStartTime != 0 && roundStartTime == 0 , "Not in removal phase.");
-        require(finalizeStartTime + 12 seconds > block.timestamp, "It's too late to remove another member.");
+        require(finalizeStartTime + 5 seconds > block.timestamp, "It's too late to remove another member.");
         require(id < participantAddresses.length, "Not a valid participant");
 
         payable(participantAddresses[id]).transfer(registrationFee); // Refund the participant
@@ -64,7 +66,7 @@ contract MerryGoRound {
     // Function to cancel the round (at any point in the 24 hour hour finalization period)
     function cancel() external {
         require(finalizeStartTime != 0 && roundStartTime == 0 , "Not in finalization phase.");
-        require(finalizeStartTime + 24 seconds > block.timestamp, "It's too late to cancel.");
+        require(finalizeStartTime + 10 seconds > block.timestamp, "It's too late to cancel.");
         
         finalizeStartTime = 0;
 
@@ -79,14 +81,14 @@ contract MerryGoRound {
 
     function finishFinalization() external {
         require(finalizeStartTime != 0 && roundStartTime == 0 , "Not in removal phase.");
-        require(finalizeStartTime + 24 seconds < block.timestamp, "It's too early to finish finalization.");
+        require(finalizeStartTime + 10 seconds < block.timestamp, "It's too early to finish finalization.");
         finalizeStartTime = 0;
         roundNumber = 1;
         roundStartTime = block.timestamp;
 
 
-        for (uint i = 0; i < participantAddresses.length - 1; i++) {
-            remainingParticipants[i] = participantAddresses[i];
+        for (uint i = 0; i < participantAddresses.length ; i++) {
+            remainingParticipants.push(participantAddresses[i]);
         }
     }
 
@@ -103,7 +105,8 @@ contract MerryGoRound {
  
     // Function to initiate the payout (after Payment phase)
     function payout() external {
-        require(roundStartTime + 30 seconds < block.timestamp, "Not in payout phase.");
+        require(roundStartTime != 0, "Round hasn't started yet.");
+        require(roundStartTime + 5 seconds < block.timestamp, "Not yet in payout phase.");
         roundNumber++;
 
         // Remove anyone that didn't pay permanently
@@ -111,7 +114,7 @@ contract MerryGoRound {
         
         // (** @TODO: Invoke Chainlink VRF for fair random winner selection **)
         // THIS IS NOT SECURE AND CAN BE MANIPULATED
-        uint256 randomishNum = uint256(keccak256(abi.encodePacked(block.timestamp, blockhash(block.number - 1), msg.sender))) % remainingParticipants.length;
+        uint256 randomishNum = uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender))) % remainingParticipants.length;
         payable(remainingParticipants[randomishNum]).transfer(address(this).balance); // Send the winner the pot
 
         // Remove them from remaining participants
