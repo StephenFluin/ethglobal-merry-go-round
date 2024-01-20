@@ -68,10 +68,34 @@ export class MgrClientComponent {
    */
   async register(name: string) {
     if (!this.MGRContractWithSigner) return;
-    this.MGRContractWithSigner['register'](name).then((tx: any) => {
-      this.changeDetector.detectChanges();
-      this.registered.set(true);
-    });
+    this.MGRContractWithSigner['register'](name, { gasLimit: 300000 }).then(
+      (tx: any) => {
+        this.changeDetector.detectChanges();
+        this.registered.set(true);
+      }
+    );
   }
-  async beginFinalization() {}
+  async beginFinalization() {
+    if (!this.MGRContractWithSigner || !this.MGRContract) return;
+    this.MGRContractWithSigner['beginFinalization']().then((tx: any) => {
+      this.stage = 'finalizing-1';
+      this.changeDetector.detectChanges();
+    });
+
+    this.MGRContract['participantAddresses']().then(
+      (participantAddresses: any) => {
+        let participants: { id: number; address: string; name: string }[] = [];
+        for (let i = 0; i < participantAddresses.length; i++) {
+          participants.push({
+            id: i,
+            address: participantAddresses[i],
+            name: await this.MGRContract['participants'](
+              participantAddresses[i]
+            ),
+          });
+        }
+        this.participants = participants;
+      }
+    );
+  }
 }

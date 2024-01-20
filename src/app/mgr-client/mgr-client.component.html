@@ -5,7 +5,10 @@
 <div>Connect your wallet to get started.</div>
 <button (click)="connect()">Connect</button>
 }
-<div>Address: {{ address() }}</div>
+<div>
+  Address: {{ address() }}. Testing for {{ address() }} ==
+  0x2232BF442f759Dd6D03601192707BA25A6C17Cf1
+</div>
 <div></div>
 @if (stage === 'nothing') { @if(!registered()) {
 <div>Go ahead and register!</div>
@@ -17,7 +20,7 @@
 <div>
   You're all registered, now wait for the leader to finalize the participants.
 </div>
-} @if(address() === '0x2232BF442f759Dd6D03601192707BA25A6C17Cf1') {
+} @if(address() == '0x2232bf442f759dd6d03601192707ba25a6c17cf1') {
 <div>You are the leader, you can start the finalization.</div>
 <button (click)="beginFinalization()">Begin Finalization</button>
 }} @else if(stage === 'finalizing-1') {
