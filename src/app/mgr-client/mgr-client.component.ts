@@ -2,6 +2,12 @@ import { ChangeDetectorRef, Component, signal } from '@angular/core';
 import { MGR_ABI } from '../mgr.abi';
 import { ethers } from 'ethers';
 
+interface Participant {
+  id: number;
+  address: string;
+  name: string;
+}
+
 @Component({
   selector: 'app-mgr-client',
   standalone: true,
@@ -17,7 +23,7 @@ export class MgrClientComponent {
 
   stage: 'nothing' | 'finalizing-1' | 'finalizing-2' | 'round' = 'nothing';
   registered = signal<boolean>(false);
-  participants: { id: string; address: string; name: string }[] = [];
+  participants: Participant[] = [];
 
   MGRContract: ethers.Contract | null = null;
   MGRContractWithSigner: ethers.Contract | null = null;
@@ -83,8 +89,10 @@ export class MgrClientComponent {
     });
 
     this.MGRContract['participantAddresses']().then(
-      (participantAddresses: any) => {
-        let participants: { id: number; address: string; name: string }[] = [];
+      async (participantAddresses: any) => {
+        if (!this.MGRContractWithSigner || !this.MGRContract) return;
+
+        let participants: Participant[] = [];
         for (let i = 0; i < participantAddresses.length; i++) {
           participants.push({
             id: i,
