@@ -1,0 +1,31 @@
+<h1>Blockchain Merry Go Round</h1>
+<p>Pay small amounts into your community, get big lump payments.</p>
+
+@if (!address()) {
+<div>Connect your wallet to get started.</div>
+<button (click)="connect()">Connect</button>
+}
+<div>Address: {{ address() }}</div>
+<div></div>
+@if (stage === 'nothing') { @if(!registered()) {
+<div>Go ahead and register!</div>
+<div>
+  <input type="text" name="name" #name placeholder="name or nickname" />
+  <button (click)="register(name.value)">Register</button>
+</div>
+} @else {
+<div>
+  You're all registered, now wait for the leader to finalize the participants.
+</div>
+} @if(address() === '0x2232BF442f759Dd6D03601192707BA25A6C17Cf1') {
+<div>You are the leader, you can start the finalization.</div>
+<button (click)="beginFinalization()">Begin Finalization</button>
+}} @else if(stage === 'finalizing-1') {
+<div>Finalizing now, should we remove anyone?</div>
+@for( participant of participants; track participant.id) {
+<div>
+  {{ participant.id }} {{ participant.name }}: {{ participant.address }}
+</div>
+} } @else if(stage === 'finalizing-2') {
+<div>Almost done, do we need to cancel? Anything unexpected?</div>
+}
